@@ -26,7 +26,19 @@ class Customer {
        FROM customers
        ORDER BY last_name, first_name`
     );
-    return results.rows.map(c => new Customer(c));
+    return results.rows.map((c) => new Customer(c));
+  }
+  /** get a customer by firstName. */
+
+  static async getByName(firstName) {
+    const results = await db.query(
+      `SELECT id, first_name AS "firstName", last_name AS "lastName", phone, notes
+      FROM customers
+      WHERE first_name= $1
+       `,
+      [firstName]
+    );
+    return results.rows.map((r) => new Customer(r));
   }
 
   /** get a customer by ID. */
@@ -77,6 +89,20 @@ class Customer {
         [this.firstName, this.lastName, this.phone, this.notes, this.id]
       );
     }
+  }
+
+  get fullName() {
+    return `${this.firstName}-${this.lastName}`;
+  }
+  static async bestCustomers() {
+    const results =
+      await db.query(`SELECT c.first_name, c.last_name, COUNT(r.id) as reservation_count
+    FROM customers c
+    LEFT JOIN reservations r ON c.id = r.customer_id
+    GROUP BY c.id
+    ORDER BY reservation_count DESC
+    LIMIT 10;`);
+    return results.rows;
   }
 }
 
